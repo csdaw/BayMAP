@@ -4,4 +4,3 @@ importFrom("stats", "rnorm", "pnorm", "rbeta", "rmultinom", "qbeta", "runif", "d
 importFrom("MASS", "ginv", "mvrnorm")
 importFrom("msm", "rtnorm")
 importFrom("mvtnorm", "rmvnorm")
-importFrom("spdep")

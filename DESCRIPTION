@@ -12,4 +12,9 @@ Authors@R: c(
   )
 URL: https://github.com/csdaw/BayMAP
 BugReports: https://github.com/csdaw/BayMAP/issues
-Depends: R (>= 3.6.0), msm, MASS, spdep, mvtnorm
+Depends: R (>= 3.6.0)
+Imports:
+  MASS,
+  msm,
+  mvtnorm,
+  stats
