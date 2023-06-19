@@ -1,7 +1,7 @@
 Package: BayMAP
 Type: Package
 Title: Bayesian Hierarchical Model for the Analysis of PAR-CLIP data
-Version: 2.0.1
+Version: 2.0.1.9000
 Date: 2021-07-20
 Author: Eva-Maria Huessler
 Maintainer: Eva-Maria Huessler <eva-maria.huessler@uni-duesseldorf.de>
