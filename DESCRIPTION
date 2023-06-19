@@ -1,0 +1,12 @@
+Package: BayMAP
+Type: Package
+Title: Bayesian Hierarchical Model for the Analysis of PAR-CLIP data
+Version: 2.0.1
+Date: 2021-07-20
+Author: Eva-Maria Huessler
+Maintainer: Eva-Maria Huessler <eva-maria.huessler@uni-duesseldorf.de>
+Depends: R (>= 3.6.0), msm, MASS, spdep, mvtnorm
+Description: Running BayMAP on PAR-CLIP data to detect PAR-CLIP induced T-to-C substitution positions on binding sites.
+License: GPL-2
+NeedsCompilation: no
+Packaged: 2021-08-19 11:28:02 UTC; evahu

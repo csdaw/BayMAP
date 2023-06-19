@@ -1,0 +1,93 @@
+\name{predict.baymap}
+\alias{predict}
+\alias{predict.baymap}
+%- Also NEED an '\alias' for EACH other topic documented here.
+\title{
+Predict method for BayMAP results
+}
+\description{
+Predictions if T-to-C substitution positions are PAR-CLIP induced substitutions or not. Results of several PAR-CLIP experiments can be combined for a combined prediction.
+}
+\usage{
+\method{predict}{baymap}(object, data, chr = "chr", pos = "pos",
+            count = "count", coverage = "coverage",
+            mutation = "mutation", mutation.type = "TC", 
+            covariates = NULL,
+            dist = c("truncated", "binomial"),
+            ran = FALSE, cluster = NULL, 
+            print.i = 100, thin = NULL, burn.in = 0, ...)
+}
+%- maybe also 'usage' for other objects documented here.
+\arguments{
+  \item{object}{
+either a \code{baymap} object or a list of \code{baymap} objects if several PAR-CLIP experiments should be analyzed jointly. If a list with \code{baymap} objects is read in, the class "baymap" should be assigned to the list prior to the analysis by \code{\link[base]{class}}.
+}
+  \item{data}{
+either a data frame with at least the count for mutations per genomic position, the number of reads/coverage and the mutation type (e.g., T-to-C) or a list of data frames.
+}
+  \item{chr}{
+the name of the variable that contains the chromosome information.
+}
+  \item{pos}{
+the name of the variable that contains the position information.
+}
+  \item{count}{
+       the name of the variable that counts the number of mutations.
+}
+  \item{coverage}{
+      the name of the variable that contains the number of reads.
+}
+  \item{mutation}{
+       the name of the variable that contains the different types of mutations.
+}
+  \item{mutation.type}{
+       the name of the mutation type that is induced by the PAR-CLIP method.
+}
+  \item{covariates}{
+       a vector containing the names for the covariates for the regression model, e.g., c("tpUTR", "cds", "fpUTR"). Intercept is automatically added as first variable.
+}
+  \item{dist}{
+       the distribution for the number of mutations. Possible entries are "truncated" (default) and "binomial.
+}
+  \item{ran}{
+a logical value indicating if neighborhood dependencies should be included via a random effect (default) or not.
+}
+  \item{cluster}{
+the name of the varialbe indicating to which cluster a position belongs. Only necessary if \code{ran} is set to \code{TRUE}.
+}
+  \item{print.i}{
+a positive integer indicating if every ith iteration step should be printed.
+}
+  \item{thin}{
+ an additional thinning rate that should be applied on the \code{baymap} outcome. Must be a positive integer.
+}
+  \item{burn.in}{
+length of burn in, i.e. number of iterations to discard at the beginning.
+}
+  \item{...}{further arguments for \code{predict}.}
+}
+\value{
+If a single PAR-CLIP data set is analyzed, the returned object is a data frame including the prior odds, the bayes factor and the posterior odds. If several PAR-CLIP data sets are analyzed, the returned object is a list combined predictions as well as separate predictions for each dara set. Posterior odds greater than one means that the probability of having a method-incuced substitution position given the data is larger than 0.5.
+}
+\references{
+Huessler, E., Schaefer, M. Schwender, H., Landgraf, P. (2019): BayMAP: A Bayesian hierarchical model for the analysis of PAR-CLIP data. \emph{Bioinformatics}, 35(12), 1992-2000.
+}
+\author{
+Eva-Maria Huessler, \email{eva-maria.huessler@uni-duesseldorf.de}
+}
+\note{
+Predictions of the separate analyzis are made for all entries of the included data set even for substitution types other than T-to-C.
+}
+
+\seealso{
+\code{\link[BayMAP]{baymap}}
+}
+\examples{\dontrun{
+data(data_test)
+res <- baymap(data = data_test,
+      inits.mu = c(0.05, 0.85, 0.2), n.iter = 4500)
+data_new <- predict(res, data_test, burn.in = 3000)
+  }
+
+}
+

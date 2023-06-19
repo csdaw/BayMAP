@@ -1,0 +1,130 @@
+predict.baymap <-
+function(object, data, chr = "chr", pos = "pos", count = "count", coverage = "coverage", mutation = "mutation", 
+                           mutation.type = "TC", covariates = NULL, dist = c("truncated", "binomial"),
+                           ran = FALSE, cluster = NULL, print.i = 100, thin = NULL, burn.in = 0, ...){
+  
+  if(is.data.frame(data)){
+    data <- list(data)
+    object <- list(object)
+  }
+  
+  if(!is.null(cluster)){
+    cluster.id <- cluster
+  }
+  
+  if(!is.character(count) | length(count) > 1){
+    stop("The variable name of the count of mutations must be given as a character string of length 1.")
+  }
+  if(!is.character(coverage) | length(coverage) > 1){
+    stop("The variable name of the read coverage must be given as a character string of length 1.")
+  }
+  # Number of data sets
+  n <- length(data)
+  
+  if(length(object) != n){
+    stop("Object and data must have the same length.")
+  }
+  
+  dist <- match.arg(dist)  
+  
+  if(ran == FALSE){
+    alpha = NULL
+  }else{
+    alpha <- vector("list", n)
+  }
+    
+  if(is.null(thin)){
+    thin <- 1
+  }
+    
+  for(i in 1:n){
+    t <- seq(burn.in + 1, nrow(object[[i]]$mu), by = thin)
+    if(ran){
+        alpha[[i]] <- object[[i]]$alpha[t,,1]
+    
+      alpha_rep <- matrix(numeric(length(t)*nrow(data[[i]])), nrow = length(t))
+      cluster <- unique(data[[i]][data[[i]][,mutation] == mutation.type,cluster.id])
+      for(j in 1:nrow(data[[i]][data[[i]][,mutation] == mutation.type,])){
+        cl <- data[[i]][data[[i]][,mutation] == mutation.type,]$cluster[j][]
+        if(cl != 0){
+          alpha_rep[,j] <- alpha[[i]][, which(cluster == cl)]
+        }
+      }
+    }else{
+      alpha_rep <- NULL
+    }
+    
+    data[[i]]$BayesFactor <- bf(u_exp = object[[i]]$mu[t,3,1], u_mm  = object[[i]]$mu[t,1,1], u_snp = object[[i]]$mu[t,2,1], q  = object[[i]]$q[t,1], k = data[[i]][,count], n = data[[i]][,coverage], dist = dist, print.i = print.i)
+    if(!is.null(covariates)){
+      X <- cbind(1, data[[i]][, covariates])
+    }else{
+      X <- matrix(1, nrow = nrow(data[[i]]))
+    }
+      data[[i]]$PriorOdds <- prO(X = X, beta = object[[i]]$beta[t,,1], alpha = alpha_rep)
+      data[[i]]$PostOdds <- data[[i]]$BayesFactor*data[[i]]$PriorOdds
+  }
+  
+  if(n == 1){
+    return(data[[1]])
+  }else{
+    data_TC_tmp <- vector("list", n)
+    for(i in 1:n){
+      if(!is.null(covariates)){
+        colnames(data[[i]])[!(colnames(data[[i]]) %in% c(chr, pos, mutation, covariates))] <- paste(colnames(data[[i]])[!(colnames(data[[i]]) %in% c(chr, pos, mutation, covariates)) ], i, sep = "_")
+      }else{
+        colnames(data[[i]])[!(colnames(data[[i]]) %in% c(chr, pos, mutation)) ] <- paste(colnames(data[[i]])[!(colnames(data[[i]]) %in% c(chr, mutation, pos)) ], i, sep = "_")
+      }
+      data_TC_tmp[[i]] <- data[[i]][data[[i]][, mutation] == mutation.type, ]
+    }
+    if(!is.null(covariates)){
+      data_TC_merge <- merge(all = TRUE, suffixes = c("", ""), by = c(chr, pos, mutation, covariates), data_TC_tmp[[1]] , data_TC_tmp[[2]])
+    }else{
+      data_TC_merge <- merge(all = TRUE, suffixes = c("", ""), by = c(chr, pos), data_TC_tmp[[1]] , data_TC_tmp[[2]])
+    }
+    if(n >= 3){
+      if(!is.null(covariates)){
+        for(i in 1:(n-2)){ 
+          data_TC_merge <- merge(all = TRUE, suffixes = c("", ""), by = c(chr, pos, covariates), data_TC_merge , data_TC_tmp[[i+2]])
+        }
+      }else{
+      for(i in 1:(n-2)){
+        data_TC_merge <- merge(all = TRUE, suffixes = c("", ""), by = c(chr, pos, covariates), data_TC_merge , data_TC_tmp[[i+2]])
+        }
+      }
+    }
+    cluster_new <- vector("list", n)
+    cl_ges <- vector("list", n)
+    alpha_rep <- vector("list", n)
+    beta <- vector("list", n)
+    X <- cbind(1, data_TC_merge[, covariates])
+    for(j in 1:n){
+        t <- seq(burn.in + 1, nrow(object[[i]]$mu), by = thin)
+        m <- matrix(rep(NA, length(t)*nrow(data_TC_merge)), nrow = length(t))
+        alpha_rep[[j]] <- m
+        beta[[j]] <- object[[j]]$beta[t,,1]
+        alpha[[j]] <- object[[j]]$alpha[t,,1]
+        cluster_new[[j]] <- unique(data_TC_tmp[[j]][,paste(cluster.id, j, sep = "_")])
+        cl_ges[[j]] <- data_TC_merge[,paste0(cluster.id, "_", j)]
+    }
+    for(l in 1:nrow(data_TC_merge)){
+      for(k in 1:length(alpha_rep)){
+        cl <- cl_ges[[k]][l]
+        if(!is.na(cl)){
+          alpha_rep[[k]][,l] <- alpha[[k]][, which(cluster_new[[k]] == cl)]
+        }
+      }
+    }
+    
+    data_TC_merge$PriorOdds_combined <- prO(X = X, beta = beta, alpha = alpha_rep)
+    data_TC_merge$PostOdds_combined <- data_TC_merge$BayesFactor_1^(!is.na(data_TC_merge$BayesFactor_1)) * data_TC_merge$BayesFactor_2^(!is.na(data_TC_merge$BayesFactor_2))
+    if(n >= 3){
+      for(i in (n-2)){
+        bf_tmp <- eval(parse(text = paste0("data_TC_merge$BayesFactor_", (i+2))))
+        data_TC_merge$PostOdds_combined <- data_TC_merge$PostOdds_combined * bf_tmp^(!is.na(bf_tmp)) 
+      }
+    }
+    data_TC_merge$PostOdds_combined <- data_TC_merge$PostOdds_combined * data_TC_merge$PriorOdds_combined
+    
+  return(list(single_data = data, combined_data = data_TC_merge))
+  }
+}

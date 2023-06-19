@@ -1,0 +1,111 @@
+\name{baymap}
+\alias{baymap}
+%- Also NEED an '\alias' for EACH other topic documented here.
+\title{
+A Bayesian hierarchical model for the Analysis of PAR-CLIP data
+}
+\description{
+The \code{baymap} function runs BayMAP on PAR-CLIP data to detect PAR-CLIP induced T-to-C substitution positions on binding sites.
+}
+\usage{
+baymap(data, count = "count", coverage = "coverage",
+      mutation = "mutation", mutation.type = "TC",
+      covariates = NULL, dist = c("truncated", "binomial"),
+      dep = TRUE, n.chains = 1, n.iter = 1500, thin = 1,
+      sd.mu = c(1e-04, 1e-04, 1e-04), inits.z = NULL,
+      inits.q = NULL, inits.mu = NULL, inits.beta = NULL,
+      ran = FALSE, cluster = "cluster", inits.tau = NULL,
+      print.i = NULL, save_log = FALSE, 
+      save_file = "./results_tmp.RData")
+}
+%- maybe also 'usage' for other objects documented here.
+\arguments{
+  \item{data}{
+       a data frame with at least the count for mutations per genomic position, the number of reads/coverage and the mutation type (e.g., T-to-C).
+}
+  \item{count}{
+       the name of the variable that counts the number of mutations.
+}
+  \item{coverage}{
+      the name of the variable that contains the number of reads.
+}
+  \item{mutation}{
+       the name of the variable that contains the different types of mutations.
+}
+  \item{mutation.type}{
+       the name of the mutation type that is induced by the PAR-CLIP method.
+}
+  \item{covariates}{
+       a vector containing the names for the covariates for the regression model, e.g., c("tpUTR", "cds", "fpUTR"). Intercept is automatically added as first variable.
+}
+  \item{dist}{
+       the distribution for the number of mutations. Possible entries are "truncated" (default) and "binomial.
+}
+  
+  \item{dep}{
+       a logical value for defining if dependencies between mismatches and SNPs are considered (default) or not.
+}
+ \item{n.chains}{
+       number of Markov chains (default: 1).
+}
+  \item{n.iter}{
+       number of total iterations per chain (including burn in; default 1500).
+}
+  \item{thin}{
+       thinning rate. Must be a positive integer. Set \code{n.thin} > 1 to save memory and computation time if n.iter is large.
+}
+  \item{sd.mu}{
+  a vector containing three values of standard deviations for the sampling of \code{mu} with a normal jumping distribution.
+}
+  \item{inits.z}{
+ a vector containing as inits an allocation for each position, where 1 stands for an experimental induced substitution position, 2 for a SNP and 3 for a mismatch.
+}
+ \item{inits.q}{
+       a numerical value between 0 and 1 containing as init the conditional probability for a mismatch position given the subsitions are not experimentally induced. 
+}
+  \item{inits.mu}{
+ a numerical vector containing as inits three values between 0 and 1 for the substitution probability due to the PAR-CLIP method, due to SNPs and due to mismatches.
+}
+  \item{inits.beta}{
+ a numerical vector containing as inits the parameter vector for the covariates. Only necessary if the vector \code{covariates} is not \code{NULL}.
+}
+  \item{ran}{
+a logical value indicating if neighborhood dependencies should be included via a random effect (default) or not.
+}
+  \item{cluster}{
+the name of the varialbe indicating to which cluster a position belongs. Only necessary if \code{ran} is set to \code{TRUE}.
+}
+  \item{inits.tau}{
+a numerical value containing as inits the standard deviation of the random effect if \code{ran} is set to \code{TRUE}.
+}
+  \item{print.i}{
+       a positive integer indicating if every ith iteration step should be printed.
+}
+  \item{save_log}{
+a logical value indicating if temporary results should be saved or not (default).
+}
+  \item{save_file}{
+file name where temporary results should be stored if \code{save_log} is set to \code{TRUE}.
+}
+}
+\value{
+The returned object is a list with sampled MCMC chains for each parameter as entries and an entry with acceptance values for each sampled value for the parameter \code{mu}. 
+}
+\references{
+Huessler, E., Schaefer, M. Schwender, H., Landgraf, P. (2019): BayMAP: A Bayesian hierarchical model for the analysis of PAR-CLIP data. \emph{Bioinformatics}, 35(12), 1992-2000.
+}
+\author{
+Eva-Maria Huessler, \email{eva-maria.huessler@uni-duesseldorf.de}
+}
+
+
+\seealso{
+\code{\link[BayMAP]{predict.baymap}}
+}
+\examples{\dontrun{
+data(data_test)
+res <- baymap(data = data_test,
+      inits.mu = c(0.05, 0.85, 0.2), n.iter = 4500)
+  }
+}
+
