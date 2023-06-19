@@ -18,3 +18,7 @@ Imports:
   msm,
   mvtnorm,
   stats
+LazyData: true
+Encoding: UTF-8
+RoxygenNote: 7.2.3
+Roxygen: list(markdown = TRUE)
